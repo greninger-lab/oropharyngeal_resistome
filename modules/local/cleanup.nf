@@ -1,0 +1,32 @@
+process CLEANUP {
+    label 'process_single'
+
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/YOUR-TOOL-HERE':
+        'nf-core/ubuntu:20.04' }"
+
+    input:
+    path summary_tsv_files
+    val  is_failed_summary
+
+
+    output:
+    path "summary*.tsv", emit: summary
+
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def summary_file_name = is_failed_summary ? "summary_failed.tsv" : "summary.tsv"
+    """
+    echo "sample_name\traw_reads\ttrimmed_reads\tpct_reads_trimmed\tmapped_reads\tpct_reads_mapped" > summary.tsv
+    awk '(NR == 2) || (FNR > 1)' *.summary.tsv >> $summary_file_name
+    
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        cleanup: ubuntu:20.04
+    END_VERSIONS
+    """
+}
