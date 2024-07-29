@@ -14,7 +14,7 @@ process RGI_MAIN {
 
     output:
     tuple val(meta), path("*.json"), emit: json
-    tuple val(meta), path("*.txt") , emit: tsv
+    tuple val(meta), path("*_summary.txt") , emit: tsv
     tuple val(meta), path("temp/") , emit: tmp
     env RGI_VERSION                , emit: tool_version
     env DB_VERSION                 , emit: db_version
@@ -59,6 +59,11 @@ process RGI_MAIN {
         --num_threads $task.cpus \\
         --output_file $prefix \\
         --input_sequence $fasta
+
+    awk 'BEGIN {FS=OFS="\\t"} 
+     NR==1 {\$1="sample\\t"\$1} 
+     NR>1 {\$1="${prefix}\\t"\$1} 
+     1' "${prefix}.txt" > "${prefix}_rgi_summary.txt"
 
     mkdir temp/
     for FILE in *.xml *.fsa *.{nhr,nin,nsq} *.draft *.potentialGenes *{variant,rrna,protein,predictedGenes,overexpression,homolog}.json; do [[ -e \$FILE ]] && mv \$FILE temp/; done

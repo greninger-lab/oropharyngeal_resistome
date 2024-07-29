@@ -56,7 +56,7 @@ include { SPADES                      } from '../modules/nf-core/spades/main'
 include { RGI_MAIN                    } from '../modules/nf-core/rgi/main/main'
 include { GUNZIP                      } from '../modules/nf-core/gunzip/main'
 include { SUMMARY                     } from '../modules/local/summary.nf'  
-include { CLEANUP                     } from '../modules/local/cleanup.nf'  
+include { CLEANUP as FINAL            } from '../modules/local/cleanup.nf'  
 
 
 /*
@@ -154,8 +154,9 @@ workflow NAMR {
         ch_summary
     )
 
-    CLEANUP ( 
+    FINAL ( 
         SUMMARY.out.summary_tsv.collect(),
+        RGI_MAIN.out.tsv.map{ it[1] }.collect(),
         false
     )        
 
