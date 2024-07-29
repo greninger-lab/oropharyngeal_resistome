@@ -15,7 +15,7 @@ process BBMAP_REPAIR {
 
     script:
     """
-    repair.sh in1=${fastq[0]} in2=${fastq[1]} out1=${meta.id}_repair_1.fastq.gz out2=${meta.id}_repair_2.fastq.gz outs=singletons.fq repair
+    repair.sh in1=${fastq[0]} in2=${fastq[1]} out1=${meta.id}_repair_1.fastq.gz out2=${meta.id}_repair_2.fastq.gz tossbrokenreads=t outs=singletons.fq repair
 
     """
 }
