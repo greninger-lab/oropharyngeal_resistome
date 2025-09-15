@@ -41,22 +41,26 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { FASTQC as FASTQC_TRIM       } from '../modules/nf-core/fastqc/main'
-include { MULTIQC as MULTIQC_TRIM     } from '../modules/nf-core/multiqc/main'
-include { BBMAP_BBDUK                 } from '../modules/nf-core/bbmap/bbduk/main'
-include { BBMAP_ALIGN                 } from '../modules/local/bbmap.nf'  
-include { BBMAP_REPAIR                } from '../modules/local/repair.nf'
-include { SEQTK_SAMPLE                } from '../modules/nf-core/seqtk/sample/main'
-include { KRAKEN2_KRAKEN2             } from '../modules/nf-core/kraken2/kraken2/main'
-include { BOWTIE2_ALIGN               } from '../modules/nf-core/bowtie2/align/main'
-include { BOWTIE2_BUILD               } from '../modules/nf-core/bowtie2/build/main'
-include { SPADES                      } from '../modules/nf-core/spades/main'
-include { RGI_MAIN                    } from '../modules/nf-core/rgi/main/main'
-include { GUNZIP                      } from '../modules/nf-core/gunzip/main'
-include { SUMMARY                     } from '../modules/local/summary.nf'  
-include { CLEANUP as FINAL            } from '../modules/local/cleanup.nf'  
+include { FASTQC                              } from '../modules/nf-core/fastqc/main'
+include { MULTIQC                             } from '../modules/nf-core/multiqc/main'
+include { FASTQC as FASTQC_TRIM               } from '../modules/nf-core/fastqc/main'
+include { MULTIQC as MULTIQC_TRIM             } from '../modules/nf-core/multiqc/main'
+include { FASTQC as FASTQC_UNCLASSIFIED       } from '../modules/nf-core/fastqc/main'
+include { MULTIQC as MULTIQC_UNCLASSIFIED     } from '../modules/nf-core/multiqc/main'
+include { BBMAP_BBDUK                         } from '../modules/nf-core/bbmap/bbduk/main'
+include { BBMAP_ALIGN                         } from '../modules/local/bbmap.nf'  
+include { BBMAP_REPAIR                        } from '../modules/local/repair.nf'
+include { BBMAP_REPAIR as REPAIR_INITIAL      } from '../modules/local/repair.nf'
+include { SEQTK_SAMPLE                        } from '../modules/nf-core/seqtk/sample/main'
+include { KRAKEN2_KRAKEN2                     } from '../modules/nf-core/kraken2/kraken2/main'
+include { KRAKEN2_KRAKEN2 as KRAKEN2_REPORT   } from '../modules/nf-core/kraken2/kraken2/main'
+include { BOWTIE2_ALIGN                       } from '../modules/nf-core/bowtie2/align/main'
+include { BOWTIE2_BUILD                       } from '../modules/nf-core/bowtie2/build/main'
+include { SPADES                              } from '../modules/nf-core/spades/main'
+include { RGI_MAIN                            } from '../modules/nf-core/rgi/main/main'
+include { GUNZIP                              } from '../modules/nf-core/gunzip/main'
+include { SUMMARY                             } from '../modules/local/summary.nf'  
+include { CLEANUP as FINAL                    } from '../modules/local/cleanup.nf'  
 
 
 /*
@@ -76,7 +80,6 @@ workflow NAMR {
 
     ch_raw_reads = INPUT_CHECK.out.reads
 
-
     BOWTIE2_BUILD (
         Channel.of([:]).combine([file(params.ref)])
     )
@@ -90,10 +93,20 @@ workflow NAMR {
         ch_raw_reads = SEQTK_SAMPLE.out.reads
     }    
 
+    REPAIR_INITIAL (
+        ch_raw_reads
+    )
+
+    BBMAP_BBDUK (
+        REPAIR_INITIAL.out.fastqs,
+        []
+    )
+/*
     BBMAP_BBDUK (
         ch_raw_reads,
         []
     )
+*/
 
     FASTQC (
         BBMAP_BBDUK.out.reads
@@ -112,7 +125,39 @@ workflow NAMR {
         true,  // save fastqs
         false  // don't report      
     )    
+/*
+    if (params.kraken_standard_db) {
 
+        REPAIR_INITIAL (
+            INPUT_CHECK.out.reads
+        )
+
+        BBMAP_BBDUK (
+            REPAIR_INITIAL.out.fastqs,
+            []
+        )        
+
+        KRAKEN2_REPORT (
+            //KRAKEN2_KRAKEN2.out.unclassified_reads_fastq,
+            BBMAP_BBDUK.out.reads,
+            params.kraken_standard_db,
+            false,  // save fastqs
+            false  // classified reads report      
+        )
+
+        FASTQC_UNCLASSIFIED (
+            //KRAKEN2_KRAKEN2.out.unclassified_reads_fastq,
+            BBMAP_BBDUK.out.reads,
+        )
+
+        MULTIQC_UNCLASSIFIED (
+            FASTQC_UNCLASSIFIED.out.zip.collect{it[1]}.ifEmpty([]),
+            [],
+            [],
+            []
+        )
+    }
+*/
     BBMAP_REPAIR (
         KRAKEN2_KRAKEN2.out.unclassified_reads_fastq,
     )
