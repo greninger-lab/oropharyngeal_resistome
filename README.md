@@ -1,4 +1,4 @@
-**namr** Neisseria AntiMicrobial Resistance pipeline
+**Oropharyngeal resistome** nextflow pipeline
 
 ## Usage
 
@@ -15,7 +15,7 @@ Each row represents a pair of fastq files (paired end).
 
 
 ```bash
- nextflow run greninger-lab/namr  \
+ nextflow run greninger-lab/oropharyngeal_resistome -r main -latest \
                 --input samplesheet.csv  \
                 --outdir /path/to/out/  \
                 --ref CP039887.fasta  \
